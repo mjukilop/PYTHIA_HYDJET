@@ -15,16 +15,16 @@ cd /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/
 echo "root -l -b -q macro.c"
 echo "I am in $PWD"   
 
-root -b -q macro.c <<EOF
-#.x macro.c;
-#.q
+root -b <<EOF
+.x macro.c($JOB, $JOBS);
+.q
 EOF
 
 
 echo "Done all jobs!"
 
-destination="/afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/"
+#destination="/afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/"
 
-echo "Copying output files to " $destination
+#echo "Copying output files to " $destination
 
-mv myhisto.root $destination 
+#mv myhisto.root $destination 

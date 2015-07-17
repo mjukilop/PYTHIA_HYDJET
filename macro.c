@@ -45,7 +45,7 @@ int nSumPt;
 TH1D histoPFID("histoPFID", "Particle Flow Candidate ID", 8, -0.5, 7.5);
 TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 100, -1000, 1000);
 
-void macro() {
+void macro(const int job,const int nJobs) {
 
 	// Start the timer
 	timer.Start();
@@ -62,13 +62,18 @@ void macro() {
 	nEvents = myTree->GetEntries();
 
 	// Loop over the entries and perform actions
-	for (Int_t ii = 0; ii < nEvents; ii++) {
+	for (Int_t ii = 100/nJobs*job; ii <= 100/nJobs*(job+1)-1/*nEvents*/; ii++) {
 		myTree->GetEntry(ii);
+
+		explicit vector muonPosition(const allocator_type& alloc = allocator_type());
+
+		// Code to print out how far through I am
+		cout << "Processing event : " << ii << "/" << nEvents << endl;
 
 		pfId = myTree->GetLeaf("pfId");
 		sumpt = myTree->GetLeaf("sumpt");
 
-		int muonCounter;
+		int muonCounter = 0;
 		
 		nParticles = pfId->GetLen();
 		nSumPt = sumpt->GetLen();
@@ -77,23 +82,16 @@ void macro() {
 		for (Int_t jj = 0; jj < nParticles; jj++) {
 			histoPFID.Fill(pfId->GetValue(jj));
 
+			// Find number of muons
 			if (pfId->GetValue(jj) == 3) {
+				muonPosition[muonCounter] = jj;
 				muonCounter++;
-			}
-
-			// Code to print out how far through the operation I am
-			if (jj % 10 == 0) {
-				cout << "pfId = " << jj << endl;
 			}
 		}
 
 		for (Int_t jj = 0; jj < nSumPt; jj++) {
 			histoSumPt.Fill(sumpt->GetValue(0));
-			
-			// Code to print out how far through the operation I am
-			if (jj % 10 == 0) {
-				cout << "sumpt = " << jj << endl;
-			}
+
 		}
 
 //		if (muonCounter >= 2) {
@@ -101,18 +99,18 @@ void macro() {
 //		}
 	}
 
-	//Close the file
+	// Close the file
 	myFile->Close();
 
 	// Open root file, store histograms and close it
-	TFile out_file("myhisto.root", "RECREATE");
+	TFile out_file(Form("myhisto%d.root", job), "RECREATE");
 
 	histoPFID.Write();
 	histoSumPt.Write();
 
 	out_file.Close();
 
-	//Stop timer and print time taken
+	// Stop timer and print time taken
 	timer.Stop();
 	float rTime = timer.RealTime();
 	float cTime = timer.CpuTime();
