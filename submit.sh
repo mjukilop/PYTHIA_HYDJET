@@ -7,7 +7,7 @@ eval `scramv1 runtime -sh`
 
 #Added by Ian
 export X509_USER_PROXY=~/x509_user_proxy/proxy
-voms-proxy-init --noregen
+#voms-proxy-init --noregen
 #</Ian>
 
 cd /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/

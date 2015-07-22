@@ -19,7 +19,7 @@ do
   export JOB=$job 
   export JOBS=$nJobs
   echo "Job = $JOB"   
-  bsub -R "pool>5000" -M 3000000 -q 8nm -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+  bsub -R "pool>5000" -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
   let "i++"
 done
 
