@@ -30,25 +30,34 @@
 #include <vector>
 #include <stdio.h>
 
-TStopwatch timer;
 
-TFile *myFile;
-TTree *myTree;
-TLeaf *pfId;
-TLeaf *pfPt;
-TLeaf *eta;
-TLeaf *phi;
-
-int nEvents;
-int nParticles;
-
-TH1D histoPFID("histoPFID", "Particle Flow Candidate ID", 8, -0.5, 7.5);
-TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 12, 60, 120);
-TH1D histoExcludedMuons("histoExcludedMuons", "How many events were excluded (0 = included, 1 = excluded)", 2, -0.5, 1.5);
-TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum", 40, 0, 200);
-TH1D histoMuonPerEvent("histoMuonPerEvent", "Number of Muons per Event", 10, -0.5, 9.5);
 
 void macro(const int job,const int nJobs) {
+
+	// Declare variables
+	TStopwatch timer;
+
+	TFile *myFile;
+	TTree *myTree;
+	TLeaf *pfId;
+	TLeaf *pfPt;
+	TLeaf *eta;
+	TLeaf *phi;
+
+	int nEvents;
+	int nParticles;
+	int muonCounter;
+	int muonPairExcludedCount;
+
+	std::vector<int> muonPosition;
+	std::vector< vector<int> > muonPairPosition;
+	std::vector<int> muonExclusion;
+
+	TH1D histoPFID("histoPFID", "Particle Flow Candidate ID", 8, -0.5, 7.5);
+	TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 12, 60, 120);
+	TH1D histoExcludedMuons("histoExcludedMuons", "How many events were excluded (0 = included, 1 = excluded)", 2, -0.5, 1.5);
+	TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum", 40, 0, 200);
+	TH1D histoMuonPerEvent("histoMuonPerEvent", "Number of Muons per Event", 10, -0.5, 9.5);
 
 	// Start the timer
 	timer.Start();
@@ -64,34 +73,36 @@ void macro(const int job,const int nJobs) {
 	nEvents = myTree->GetEntries();
 
 	// Loop over the entries and perform actions
-	for (Int_t ii = 100/nJobs*job; ii <= 100/nJobs*(job+1)-1/*nEvents*/; ii++) {
+	for (Int_t ii = nEvents/nJobs*job; ii <= nEvents/nJobs*(job+1)-1/*nEvents*/; ii++) {
+		
+		// Access entry data
 		myTree->GetEntry(ii);
 
-		std::vector<int> muonPosition;
-		std::vector< vector<int> > muonPairPosition;
-		std::vector<int> muonExclusion;
-
-		// Code to print out how far through I am
-		cout << "Processing event : " << ii << "/" << nEvents << endl;
+		// Declare or reset event specific variables
+		muonPosition.clear();
+		muonPairPosition.clear();
+		muonExclusion.clear();
 
 		pfId = myTree->GetLeaf("pfId");
 		pfPt = myTree->GetLeaf("pfPt");
 		eta = myTree->GetLeaf("pfEta");
 		phi = myTree->GetLeaf("pfPhi");
 
-		int muonCounter = 0;
-		int muonPairExcludedCount = 0;
+		muonCounter = 0;
+		muonPairExcludedCount = 0;
 		
 		nParticles = pfId->GetLen();
 
-		// Fill histograms
+		// Code to print out how far through I am
+		cout << "Processing event : " << ii << "/" << nEvents << endl;
+
+		// Loop through particles and find muons
 		for (Int_t jj = 0; jj < nParticles; jj++) {
 			histoPFID.Fill(pfId->GetValue(jj));
 
-			// Find number of muons, add positions to vector
-			if (pfId->GetValue(jj) == 3 /*&& pfPt->GetValue(jj) > 20*/) {
+			// Find number of muons, add positions to vector, APPLY CUTS
+			if (pfId->GetValue(jj) == 3 && pfPt->GetValue(jj) > 20 && eta->GetValue(jj) < 2.4) {
 				muonPosition.push_back(jj);
-				histoMuonPt.Fill(pfPt->GetValue(jj));
 				muonCounter++;
 			}
 		}
@@ -101,9 +112,59 @@ void macro(const int job,const int nJobs) {
 
 		// Comparing muons to find close pairs.
 		if (muonCounter >= 2) {
+			Int_t jj = -1;
 			outerLoop:
-			for (Int_t jj = 0; jj < muonPosition.size(); jj++) {
+
+			while (jj < muonPosition.size()-1) {
+				// Increment loop at start to make up for goto breaking before end of while loop
+				jj++;
+				
+				// Fill histogram and set variables for data storage and keeping track of times paired
+				histoMuonPt.Fill(pfPt->GetValue(muonPosition[jj]));
+				int sumPtStorage= 0;
+				int muonPairNum = 0;
+
 				for (Int_t kk = 0; kk < muonPosition.size(); kk++) {
+					if (jj != kk) {
+
+						// Find SumPt for later use
+						double combinedPt = pfPt->GetValue(muonPosition[jj]) + pfPt->GetValue(muonPosition[kk]);
+
+						// Check muons for pairs within 60-120 GeV, exclude muons which pair multiple times
+						if (combinedPT > 60 && combinedPT < 120) {
+							vector<int> temp(2);
+							temp[0] = jj;
+							temp[1] = kk;
+							sumPtStorage = combinedPt;
+							muonPairNum++;
+
+							if (muonPairNum == 2) {
+								muonPairPosition.pop_back();
+								muonPairExcludedCount++;
+								muonExclusion.push_back(jj);
+								goto outerLoop;
+							}
+							else {
+								muonPairPosition.push_back(temp);
+							}
+						}
+					}
+				}
+
+				// Fill histogram if muon had only one pairing
+				if (muonPairNum == 1) {
+					histoSumPt.Fill(sumPtStorage);
+				}
+			}
+		}
+			
+		// Fill number of excluded muon pair count
+		histoExcludedMuons.Fill(muonPairExcludedCount);
+			
+/*			for (Int_t jj = 0; jj < muonPosition.size(); jj++) {
+				histoMuonPt.Fill(pfPt->GetValue(jj));
+				
+				for (Int_t kk = 0; kk < muonPosition.size(); kk++) {					
 					if (jj != kk) {
 
 						// Set variables to see if muon has paired more than once
@@ -123,6 +184,9 @@ void macro(const int job,const int nJobs) {
 								muonPairExcludedCount++;
 								goto outerLoop;
 							} else {
+
+
+
 								muonPairPosition.push_back(temp);
 								histoSumPt.Fill(combinedPT);
 							}
@@ -131,10 +195,7 @@ void macro(const int job,const int nJobs) {
 				}
 			}
 		}
-
-		// Fill number of excluded muon pair count
-		histoExcludedMuons.Fill(muonPairExcludedCount);
-	}
+*/	}
 
 	// Close the file
 	myFile->Close();
