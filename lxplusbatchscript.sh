@@ -5,7 +5,7 @@ eval `scramv1 runtime -sh`
 
 cd /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/
 
-nJobs=1000
+nJobs=1
 i=0
 while [ $i -lt $nJobs ];
 do 

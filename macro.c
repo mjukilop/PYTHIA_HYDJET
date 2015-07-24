@@ -56,14 +56,16 @@ void macro(const int job,const int nJobs) {
 	TH1D histoPFID("histoPFID", "Particle Flow Candidate ID", 8, -0.5, 7.5);
 	TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 12, 60, 120);
 	TH1D histoExcludedMuons("histoExcludedMuons", "How many events were excluded (0 = included, 1 = excluded)", 2, -0.5, 1.5);
-	TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum", 40, 0, 200);
+	TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum (after cuts)", 40, 0, 200);
+	TH1D histoMuonPtAll("histoMuonPtAll", "Individual muon transverse momentum (all)", 40, 0, 200);
 	TH1D histoMuonPerEvent("histoMuonPerEvent", "Number of Muons per Event", 10, -0.5, 9.5);
+	TH1D histoMuonsPassedEvent("histoMuonsPassedEvent", "0 = muon, 1 = didn't pass cut, 2 = passed cut", 3, -0.5, 2.5);
 
 	// Start the timer
 	timer.Start();
 
 	// Setting tree and branch locations
-	myFile = TFile::Open("root://xrootd.cmsaf.mit.edu//store/user/dgulhan/PYTHIA_HYDJET_Track9_Jet30_Pyquen_DiJet_TuneZ2_Unquenched_Hydjet1p8_2760GeV_merged/HiForest_PYTHIA_HYDJET_pthat220_Track9_Jet30_matchEqR_merged_forest_0.root");
+	myFile = TFile::Open("root://xrootd.cmsaf.mit.edu//store/user/dgulhan/PYTHIA_HYDJET_Track9_Jet30_Pyquen_DiJet_TuneZ2_Unquenched_Hydjet1p8_2760GeV_merged/HiForest_PYTHIA_HYDJET_pthat170_Track9_Jet30_matchEqR_merged_forest_0.root");
 	pfcandAnalyzer->cd();
 	myTree = pfTree;
 //	pfTree->Print();
@@ -73,7 +75,7 @@ void macro(const int job,const int nJobs) {
 	nEvents = myTree->GetEntries();
 
 	// Loop over the entries and perform actions
-	for (Int_t ii = nEvents/nJobs*job; ii <= nEvents/nJobs*(job+1)-1/*nEvents*/; ii++) {
+	for (Int_t ii = 100/nJobs*job; ii <= 100/nJobs*(job+1)-1/*nEvents*/; ii++) {
 		
 		// Access entry data
 		myTree->GetEntry(ii);
@@ -101,9 +103,21 @@ void macro(const int job,const int nJobs) {
 			histoPFID.Fill(pfId->GetValue(jj));
 
 			// Find number of muons, add positions to vector, APPLY CUTS
-			if (pfId->GetValue(jj) == 3 && pfPt->GetValue(jj) > 20 && eta->GetValue(jj) < 2.4) {
-				muonPosition.push_back(jj);
-				muonCounter++;
+			if (pfId->GetValue(jj) == 3) {
+				if (pfPt->GetValue(jj) > 7 /*&& abs(eta->GetValue(jj)) < 2.4*/) {
+					muonPosition.push_back(jj);
+					// Debug
+					histoMuonsPassedEvent.Fill(2);
+
+					muonCounter++;
+				}
+				else {
+					// Debug
+					histoMuonsPassedEvent.Fill(1);
+				}
+				
+				histoMuonsPassedEvent.Fill(0);
+				histoMuonPtAll.Fill(pfPt->GetValue(jj));
 			}
 		}
 
@@ -112,10 +126,18 @@ void macro(const int job,const int nJobs) {
 
 		// Comparing muons to find close pairs.
 		if (muonCounter >= 2) {
+			// Debug
+			TFile debug("debug.txt","RECREATE");
+			debug << "We are in the main if with at least 2 muons. \n";
+
 			Int_t jj = -1;
+			goto outerLoop;
 			outerLoop:
 
 			while (jj < muonPosition.size()-1) {
+				// Debug
+				debug << "WHILE LOOP";
+
 				// Increment loop at start to make up for goto breaking before end of while loop
 				jj++;
 				
@@ -132,6 +154,9 @@ void macro(const int job,const int nJobs) {
 
 						// Check muons for pairs within 60-120 GeV, exclude muons which pair multiple times
 						if (combinedPT > 60 && combinedPT < 120) {
+							// Debug
+							debug << "---------------------------COMBINED PT----------------------------";
+
 							vector<int> temp(2);
 							temp[0] = jj;
 							temp[1] = kk;
@@ -139,6 +164,9 @@ void macro(const int job,const int nJobs) {
 							muonPairNum++;
 
 							if (muonPairNum == 2) {
+								// Debug
+								debug << ">>>> EXCLUDED <<<<";
+
 								muonPairPosition.pop_back();
 								muonPairExcludedCount++;
 								muonExclusion.push_back(jj);
@@ -150,6 +178,9 @@ void macro(const int job,const int nJobs) {
 						}
 					}
 				}
+				// Debug
+				debug << "Filling sumPt";
+				debug.Close();
 
 				// Fill histogram if muon had only one pairing
 				if (muonPairNum == 1) {
@@ -207,7 +238,9 @@ void macro(const int job,const int nJobs) {
 	histoSumPt.Write();
 	histoExcludedMuons.Write();
 	histoMuonPt.Write();
+	histoMuonPtAll.Write();
 	histoMuonPerEvent.Write();
+	histoMuonsPassedEvent.Write();
 
 	out_file.Close();
 
