@@ -75,7 +75,7 @@ void macro(const int job,const int nJobs) {
 	nEvents = myTree->GetEntries();
 
 	// Loop over the entries and perform actions
-	for (Int_t ii = 100/nJobs*job; ii <= 100/nJobs*(job+1)-1/*nEvents*/; ii++) {
+	for (Int_t ii = nEvents/nJobs*job; ii <= nEvents/nJobs*(job+1)-1/*nEvents*/; ii++) {
 		
 		// Access entry data
 		myTree->GetEntry(ii);
@@ -124,11 +124,28 @@ void macro(const int job,const int nJobs) {
 		// Fill histogram showing number of muons per event
 		histoMuonPerEvent.Fill(muonCounter);
 
+		// Debug
+		if (job == 0) {
+			remove("debug.txt");
+		}
+		ofstream debug("debug.txt", ios::out | ios::app);
+
 		// Comparing muons to find close pairs.
 		if (muonCounter >= 2) {
 			// Debug
-			TFile debug("debug.txt","RECREATE");
-			debug << "We are in the main if with at least 2 muons. \n";
+			if (debug.is_open()) {
+				debug << "We are in the main if with at least 2 muons. \n";
+			}
+			else {
+				cout << "unable to open file";
+			}
+			if (debug.good()) {
+				cout << "It is good! /n";
+			}
+			else {
+				cout << "It is not good /n";
+			}
+			
 
 			Int_t jj = -1;
 			goto outerLoop;
@@ -180,7 +197,6 @@ void macro(const int job,const int nJobs) {
 				}
 				// Debug
 				debug << "Filling sumPt";
-				debug.Close();
 
 				// Fill histogram if muon had only one pairing
 				if (muonPairNum == 1) {
@@ -188,7 +204,9 @@ void macro(const int job,const int nJobs) {
 				}
 			}
 		}
-			
+		// Debug
+		debug.close();
+
 		// Fill number of excluded muon pair count
 		histoExcludedMuons.Fill(muonPairExcludedCount);
 			
