@@ -24,6 +24,7 @@
 #include "TObjArray.h"
 #include "TSeqCollection.h"
 #include "TNamed.h"
+#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <TRandom.h>
@@ -32,7 +33,7 @@
 
 
 
-void macro(const int job,const int nJobs) {
+void macro(const int job,const int nJobs, const int file) {
 
 	// Declare variables
 	TStopwatch timer;
@@ -52,6 +53,16 @@ void macro(const int job,const int nJobs) {
 	std::vector<int> muonPosition;
 	std::vector< vector<int> > muonPairPosition;
 	std::vector<int> muonExclusion;
+	
+	// Debug
+	std::vector<string> debug;
+	stringstream stringStream;
+	string str;
+	int variables[] = { 10521, 12716, 15477, 18384, 1994, 21839, 23405, 2376, 25056, 25775, 26891, 27260, 27818, 29880, 30252, 30830, 3335, 3476, 36127, 36571, 36965, 3769, 39407, 39490, 3979, 39937, 40672, 40917, 42671, 44443, 46620, 47017, 51866, 54781, 54957, 55273, 55405, 56243, 57267, 57413, 60193, 6407, 65470, 67504, 67669, 68357, 69141, 69212, 69481, 69849, 71256, 71964, 72153, 72461, 7549, 9338 };
+	std::vector<int> testVariables(56);
+	for (int i = 0; i < testVariables.size(); i++) {
+		testVariables[i] = variables[i];
+	}
 
 	TH1D histoPFID("histoPFID", "Particle Flow Candidate ID", 8, -0.5, 7.5);
 	TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 12, 60, 120);
@@ -64,8 +75,20 @@ void macro(const int job,const int nJobs) {
 	// Start the timer
 	timer.Start();
 
-	// Setting tree and branch locations
-	myFile = TFile::Open("root://xrootd.cmsaf.mit.edu//store/user/dgulhan/PYTHIA_HYDJET_Track9_Jet30_Pyquen_DiJet_TuneZ2_Unquenched_Hydjet1p8_2760GeV_merged/HiForest_PYTHIA_HYDJET_pthat170_Track9_Jet30_matchEqR_merged_forest_0.root");
+	// Opening file and setting tree
+	string inFile;
+	inFile = "rootfiles.txt";
+	ifstream instr(inFile.c_str(), std::ifstream::in);
+	string fileName;
+	// Reading up to and stop on our file
+	for (int lineNum = 1; lineNum <= file; lineNum++) {
+		instr >> fileName;
+	}
+	cout << "File: " << fileName << endl;
+	cout << file << endl;
+	myFile = TFile::Open(fileName.c_str());
+	//myFile = TFile::Open("root://xrootd.cmsaf.mit.edu//store/user/dgulhan/PYTHIA_HYDJET_Track9_Jet30_Pyquen_DiJet_TuneZ2_Unquenched_Hydjet1p8_2760GeV_merged/HiForest_PYTHIA_HYDJET_pthat170_Track9_Jet30_matchEqR_merged_forest_0.root");
+
 	pfcandAnalyzer->cd();
 	myTree = pfTree;
 //	pfTree->Print();
@@ -76,7 +99,9 @@ void macro(const int job,const int nJobs) {
 
 	// Loop over the entries and perform actions
 	for (Int_t ii = nEvents/nJobs*job; ii <= nEvents/nJobs*(job+1)-1/*nEvents*/; ii++) {
-		
+	//for (Int_t pp = 0; pp < testVariables.size(); pp++) {
+		//Int_t ii = testVariables[pp];
+
 		// Access entry data
 		myTree->GetEntry(ii);
 
@@ -94,9 +119,6 @@ void macro(const int job,const int nJobs) {
 		muonPairExcludedCount = 0;
 		
 		nParticles = pfId->GetLen();
-
-		// Code to print out how far through I am
-		cout << "Processing event : " << ii << "/" << nEvents << endl;
 
 		// Loop through particles and find muons
 		for (Int_t jj = 0; jj < nParticles; jj++) {
@@ -125,36 +147,28 @@ void macro(const int job,const int nJobs) {
 		histoMuonPerEvent.Fill(muonCounter);
 
 		// Debug
-		if (job == 0) {
-			remove("debug.txt");
+		if (muonCounter >= 2) {
+			stringStream.str("");
+			stringStream << "We are looking at event " << ii << "\n";
+			str = stringStream.str();
+			debug.push_back(str);
+
+			stringStream.str("");
+			stringStream << muonCounter << " belongs to event " << ii << "\n";
+			str = stringStream.str();
+			debug.push_back(str);
+
+			debug.push_back("/////////////////////////////////////END EVENT\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\n");
 		}
-		ofstream debug("debug.txt", ios::out | ios::app);
 
 		// Comparing muons to find close pairs.
 		if (muonCounter >= 2) {
-			// Debug
-			if (debug.is_open()) {
-				debug << "We are in the main if with at least 2 muons. \n";
-			}
-			else {
-				cout << "unable to open file";
-			}
-			if (debug.good()) {
-				cout << "It is good! /n";
-			}
-			else {
-				cout << "It is not good /n";
-			}
 			
-
-			Int_t jj = -1;
-			goto outerLoop;
+			int jj = -1;
 			outerLoop:
-
-			while (jj < muonPosition.size()-1) {
-				// Debug
-				debug << "WHILE LOOP";
-
+			int whileLoopSize = muonPosition.size() - 1;
+			
+			while (jj < whileLoopSize) {
 				// Increment loop at start to make up for goto breaking before end of while loop
 				jj++;
 				
@@ -170,9 +184,9 @@ void macro(const int job,const int nJobs) {
 						double combinedPt = pfPt->GetValue(muonPosition[jj]) + pfPt->GetValue(muonPosition[kk]);
 
 						// Check muons for pairs within 60-120 GeV, exclude muons which pair multiple times
-						if (combinedPT > 60 && combinedPT < 120) {
+						if (combinedPt > 60 && combinedPt < 120) {
 							// Debug
-							debug << "---------------------------COMBINED PT----------------------------";
+							debug.push_back("---------------------------COMBINED PT----------------------------\n");
 
 							vector<int> temp(2);
 							temp[0] = jj;
@@ -182,7 +196,7 @@ void macro(const int job,const int nJobs) {
 
 							if (muonPairNum == 2) {
 								// Debug
-								debug << ">>>> EXCLUDED <<<<";
+								debug.push_back(">>>> EXCLUDED <<<<\n");
 
 								muonPairPosition.pop_back();
 								muonPairExcludedCount++;
@@ -195,8 +209,6 @@ void macro(const int job,const int nJobs) {
 						}
 					}
 				}
-				// Debug
-				debug << "Filling sumPt";
 
 				// Fill histogram if muon had only one pairing
 				if (muonPairNum == 1) {
@@ -204,8 +216,6 @@ void macro(const int job,const int nJobs) {
 				}
 			}
 		}
-		// Debug
-		debug.close();
 
 		// Fill number of excluded muon pair count
 		histoExcludedMuons.Fill(muonPairExcludedCount);
@@ -249,8 +259,15 @@ void macro(const int job,const int nJobs) {
 	// Close the file
 	myFile->Close();
 
+	ofstream debugtxt(Form("debug%d_file%d.txt", job, file), ios::out | ios::trunc);
+	if (debugtxt.is_open()) {
+		for (Int_t ii = 0; ii < debug.size(); ii++) {
+			debugtxt << debug[ii];
+		}
+	}
+
 	// Open root file, store histograms and close it
-	TFile out_file(Form("myhisto%d.root", job), "RECREATE");
+	TFile out_file(Form("myhisto%d_file%d.root", job, file), "RECREATE");
 
 	histoPFID.Write();
 	histoSumPt.Write();
