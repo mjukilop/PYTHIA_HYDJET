@@ -33,7 +33,7 @@
 
 
 
-void macro(const int job,const int nJobs, const int file) {
+void macro(const int job,const double nJobs, const int file) {
 
 	// Declare variables
 	TStopwatch timer;
@@ -42,8 +42,8 @@ void macro(const int job,const int nJobs, const int file) {
 	TTree *myTree;
 	TLeaf *pfId;
 	TLeaf *pfPt;
-	TLeaf *eta;
-	TLeaf *phi;
+	TLeaf *pfEta;
+	TLeaf *pfphi;
 
 	int nEvents;
 	int nParticles;
@@ -67,10 +67,11 @@ void macro(const int job,const int nJobs, const int file) {
 	TH1D histoPFID("histoPFID", "Particle Flow Candidate ID", 8, -0.5, 7.5);
 	TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 12, 60, 120);
 	TH1D histoExcludedMuons("histoExcludedMuons", "How many events were excluded (0 = included, 1 = excluded)", 2, -0.5, 1.5);
-	TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum (after cuts)", 40, 0, 200);
-	TH1D histoMuonPtAll("histoMuonPtAll", "Individual muon transverse momentum (all)", 40, 0, 200);
+	TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum (after cuts)", 200, 0, 200);
+	TH1D histoMuonPtAll("histoMuonPtAll", "Individual muon transverse momentum (all)", 200, 0, 200);
 	TH1D histoMuonPerEvent("histoMuonPerEvent", "Number of Muons per Event", 10, -0.5, 9.5);
 	TH1D histoMuonsPassedEvent("histoMuonsPassedEvent", "0 = muon, 1 = didn't pass cut, 2 = passed cut", 3, -0.5, 2.5);
+	TH1D histoMotherInvMass("histoMotherInvMass", "Invariant mass of dimuon mother particle", 150, 0, 150);
 
 	// Start the timer
 	timer.Start();
@@ -98,7 +99,7 @@ void macro(const int job,const int nJobs, const int file) {
 	nEvents = myTree->GetEntries();
 
 	// Loop over the entries and perform actions
-	for (Int_t ii = nEvents/nJobs*job; ii <= nEvents/nJobs*(job+1)-1/*nEvents*/; ii++) {
+	for (Int_t ii = (int)(nEvents/nJobs*job); ii <= (int)(nEvents/nJobs*(job+1)-1)/*nEvents*/; ii++) {
 	//for (Int_t pp = 0; pp < testVariables.size(); pp++) {
 		//Int_t ii = testVariables[pp];
 
@@ -112,8 +113,8 @@ void macro(const int job,const int nJobs, const int file) {
 
 		pfId = myTree->GetLeaf("pfId");
 		pfPt = myTree->GetLeaf("pfPt");
-		eta = myTree->GetLeaf("pfEta");
-		phi = myTree->GetLeaf("pfPhi");
+		pfEta = myTree->GetLeaf("pfEta");
+		pfPhi = myTree->GetLeaf("pfPhi");
 
 		muonCounter = 0;
 		muonPairExcludedCount = 0;
@@ -158,10 +159,10 @@ void macro(const int job,const int nJobs, const int file) {
 			str = stringStream.str();
 			debug.push_back(str);
 
-			debug.push_back("/////////////////////////////////////END EVENT\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\n");
+			debug.push_back("/////////////////////////////////////END EVENT\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\n");
 		}
 
-		// Comparing muons to find close pairs.
+		// Check muon combined pT and calculate mother particle invariant mass and plot data
 		if (muonCounter >= 2) {
 			
 			int jj = -1;
@@ -207,6 +208,51 @@ void macro(const int job,const int nJobs, const int file) {
 								muonPairPosition.push_back(temp);
 							}
 						}
+
+						// Calculating invariant mass of mother particle
+						double eta1 = pfEta->GetValue(muonPosition[jj]);
+						double eta2 = pfEta->GetValue(muonPosition[kk]);
+						double phi1 = pfPhi->GetValue(muonPosition[jj]);
+						double phi2 = pfPhi->GetValue(muonPosition[kk]);
+						double muonInvMass = 0.1056583715; //GeV/c^2
+						double pt1 = pfPt->GetValue(muonPosition[jj]);
+						double pt2 = pfPt->GetValue(muonPosition[kk]);
+						double e1;
+						double e2;
+						double px1;
+						double px2;
+						double py1;
+						double py2;
+						double pz1;
+						double pz2;
+						double e1;
+						double e2;
+						double p1;
+						double p2;
+						double motherInvMass;
+						double motherP;
+						double motherE;
+
+						double theta1 = 2 * atan(exp(-1 * eta1));
+						double theta2 = 2 * atan(exp(-1 * eta2));
+
+						px1 = pt1 * cos(phi1);
+						px2 = pt2 * cos(phi2);
+						py1 = pt1 * sin(phi1);
+						py2 = pt2 * sin(phi2);
+						pz1 = pt1 / tan(theta1);
+						pz2 = pt2 / tan(theta2);
+						motherP = sqrt((pow((px1 + px2), 2) + pow((py1 + py2), 2) + pow((pz1 + pz2), 2)));
+
+						p1 = sqrt((pow(px1, 2) + pow(py1, 2) + pow(pz1, 2)));
+						p2 = sqrt((pow(px2, 2) + pow(py2, 2) + pow(pz2, 2)));
+						e1 = sqrt((pow(muonInvMass, 2) + pow(p1, 2)));
+						e2 = sqrt((pow(muonInvMass, 2) + pow(p2, 2)));
+						motherE = e1 + e2;
+
+						motherInvMass = sqrt((pow(motherE, 2) - pow(motherP, 2)));
+
+						histoMotherInvMass.Fill(motherInvMass);
 					}
 				}
 
@@ -276,6 +322,7 @@ void macro(const int job,const int nJobs, const int file) {
 	histoMuonPtAll.Write();
 	histoMuonPerEvent.Write();
 	histoMuonsPassedEvent.Write();
+	histoMotherInvMass.Write();
 
 	out_file.Close();
 

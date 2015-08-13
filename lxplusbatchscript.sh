@@ -26,10 +26,9 @@ then
 				let "i++"
 			done
 		done
-	fi
-
-	if [ $2 -eq 15 ]
+	elif [ $2 -eq 15 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -44,6 +43,7 @@ then
 		done
 	elif [ $2 -eq 30 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -58,6 +58,7 @@ then
 		done
 	elif [ $2 -eq 50 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -72,6 +73,7 @@ then
 		done
 	elif [ $2 -eq 80 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -86,6 +88,7 @@ then
 		done
 	elif [ $2 -eq 120 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -100,6 +103,7 @@ then
 		done
 	elif [ $2 -eq 170 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -114,6 +118,7 @@ then
 		done
 	elif [ $2 -eq 220 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -128,6 +133,7 @@ then
 		done
 	elif [ $2 -eq 280 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -142,6 +148,7 @@ then
 		done
 	elif [ $2 -eq 370 ]
 	then
+		i=0
 		while [ $i -lt $nJobs ]
 		do 
 			let "job=i"
@@ -154,11 +161,11 @@ then
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
 			let "i++"
 		done
-	else
-		echo "Arguments were $1, $2"
-		echo "Argument one is the number of Jobs you wish to run per file, two is either a specific pT file (e.g. 15,30,80,270) or "all" to run over all files"
 	fi
 fi
+
+echo "Arguments were $1, $2"
+echo "Expected '"lxplusbatchscript nJobsPerFile file"', where file=all,15,30,50,etc"
 
 echo "submit all jobs!"
 
