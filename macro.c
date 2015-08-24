@@ -516,7 +516,7 @@ void analysePF(struct pfData pf) {
 						py2 = pt2 * sin(phi2);
 						pz1 = pt1 / tan(theta1);
 						pz2 = pt2 / tan(theta2);
-						motherPtEMP = sqrt((pow((px1 + px2), 2) + pow((py1 + py2), 2) + pow((pz1 + pz2), 2)));
+						motherPTemp = sqrt((pow((px1 + px2), 2) + pow((py1 + py2), 2) + pow((pz1 + pz2), 2)));
 
 						p1 = sqrt((pow(px1, 2) + pow(py1, 2) + pow(pz1, 2)));
 						p2 = sqrt((pow(px2, 2) + pow(py2, 2) + pow(pz2, 2)));
