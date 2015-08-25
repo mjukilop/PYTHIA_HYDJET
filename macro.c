@@ -385,10 +385,10 @@ void analyseJet(struct jetData arg) {
 	TTree *jetTree = (TTree*)myFile->Get("akPu3PFJetAnalyzer/t");
 	TLeaf *jtpt = jetTree->GetLeaf("jtpt");
 	TLeaf *jtPhi = jetTree->GetLeaf("jtphi");
-	TLeaf *jtEta = jetTree->GetLeaf("jteta");
+//	TLeaf *jtEta = jetTree->GetLeaf("jteta");
 
 	// Find number of events in tree
-	int nEvents = jetTree->GetEntries();
+//	int nEvents = jetTree->GetEntries();
 	
 	// ------------------------------------- Doing calculations and filling histograms -------------------------------------
 	// Loop over all events and perform actions
@@ -482,20 +482,20 @@ void analysePF(struct pfData arg) {
 				jj++;
 
 				// Fill histogram and set variables for data storage and keeping track of how many times a muon has been paired
-				arg.histoMuonPt.Fill(pfPt->GetValue(muonPosition[jj]));
+				arg.histoMuonPt->Fill(pfPt->GetValue(muonPosition[jj]));
 
 				// Loop over each muon pair
-				for (Int_t kk = 0; kk < muonPosition.size(); kk++) {
+				for (unsigned Int_t kk = 0; kk < muonPosition.size(); kk++) {
 					if (jj != kk) {
 
 						// Calculating invariant mass
-						double eta1 = pfEta->GetValue((*(muonPosition))[jj]);
-						double eta2 = pfEta->GetValue((*(muonPosition))[kk]);
-						double phi1 = pfPhi->GetValue((*(muonPosition))[jj]);
-						double phi2 = pfPhi->GetValue((*(muonPosition))[kk]);
+						double eta1 = pfEta->GetValue(muonPosition.at(jj));
+						double eta2 = pfEta->GetValue(muonPosition.at(jj));
+						double phi1 = pfPhi->GetValue((muonPosition.at(jj));
+						double phi2 = pfPhi->GetValue((muonPosition.at(jj));
 						double muonInvMass = 0.1056583715; //GeV/c^2
-						double pt1 = pfPt->GetValue((*(muonPosition))[jj]);
-						double pt2 = pfPt->GetValue((*(muonPosition))[kk]);
+						double pt1 = pfPt->GetValue((muonPosition.at(jj));
+						double pt2 = pfPt->GetValue((muonPosition.at(jj));
 						double e1;
 						double e2;
 						double px1;
