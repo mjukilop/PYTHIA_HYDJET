@@ -9,6 +9,7 @@
 #include "TROOT.h"
 #include "TTree.h"
 #include "TBranch.h" 
+#include "TLeaf.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
@@ -44,13 +45,14 @@ struct pfData{
 	string filePath;
 	int job;
 	double nJobs;
-	std::vector<int>* muonPosition;
-	std::vector< vector<int> >* muontPairPosition;
-	std::vector<int>* muonExclusion;
+//	std::vector<int>* muonPosition;
+//	std::vector< vector<int> >* muontPairPosition;
+//	std::vector<int>* muonExclusion;
 	std::vector<double>* motherMass;
 	std::vector<double>* motherEta;
 	std::vector<double>* motherPhi;
 	TH1D* histoMotherInvMass;
+	TH1D* histoMuonPt;
 } pf;
 
 void analysePF(struct pfData pf);
@@ -61,9 +63,9 @@ void macro(const int job,const double nJobs, const int file) {
 	// Declare variables
 	TStopwatch timer;
 
-	std::vector<int> muonPosition;
-	std::vector< vector<int> > muonPairPosition;
-	std::vector<int> muonExclusion;
+//	std::vector<int> muonPosition;
+//	std::vector< vector<int> > muonPairPosition;
+//	std::vector<int> muonExclusion;
 	std::vector<double> motherMass;
 	std::vector<double> motherPhi;
 	std::vector<double> motherEta;
@@ -109,13 +111,14 @@ void macro(const int job,const double nJobs, const int file) {
 	pf.filePath = fileName;
 	pf.job = job;
 	pf.nJobs = nJobs;
-	pf.muonPosition = &muonPosition;
-	pf.muonPairPosition = &muonPairPosition;
-	pf.muonExclusion = &muonExclusion;
+//	pf.muonPosition = &muonPosition;
+//	pf.muonPairPosition = &muonPairPosition;
+//	pf.muonExclusion = &muonExclusion;
 	pf.motherMass = &motherMass;
 	pf.motherEta = &motherEta;
 	pf.motherPhi = &motherPhi;
 	pf.histoMotherInvMass = &histoMotherInvMass;
+	pf.histoMuonPt = &histoMuonPt;
 
 	analysePF(pf);
 
@@ -372,11 +375,11 @@ void macro(const int job,const double nJobs, const int file) {
 	cout << "Good bye : " << "\t" << endl;
 }
 
-void analyseJet(struct jetData jet) {
+void analyseJet(struct jetData arg) {
 	cout << "analyseJet\n";
 	// ------------------------------------- Declaring variables -------------------------------------
 	// Open file
-	TFile *myFile = TFile::Open(jet.filePath.c_str());
+	TFile *myFile = TFile::Open(arg.filePath.c_str());
 
 	// Set tree and leaves
 	TTree *jetTree = (TTree*)myFile->Get("akPu3PFJetAnalyzer/t");
@@ -389,28 +392,28 @@ void analyseJet(struct jetData jet) {
 	
 	// ------------------------------------- Doing calculations and filling histograms -------------------------------------
 	// Loop over all events and perform actions
-	for (Int_t ii = (int)(100 / jet.nJobs*jet.job); ii <= (int)(100 / jet.nJobs*(jet.job + 1) - 1); ii++) {
+	for (Int_t ii = (int)(100 / arg.nJobs*arg.job); ii <= (int)(100 / arg.nJobs*(arg.job + 1) - 1); ii++) {
 		
 		// Access the ii'th event
 		jetTree->GetEntry(ii);
 
 		// Find motherPhi.length() for use in the loop
-		int motherLength = jet.motherPhi->length();
+		int motherLength = arg.motherPhi->size();
 
 		// Loop over all mother particles and compare them with each jet
 		for (Int_t jj = 0; jj < motherLength; jj++) {
-			if (abs(jtPhi->GetValue(jj) - (*(jet.motherPhi))[jj]) > 2 * M_PI / 3){
-				jet.histoJetPt->Fill(jtpt->GetValue(ii));
+			if (abs(jtPhi->GetValue(jj) - (*(arg.motherPhi))[jj]) > 2 * M_PI / 3){
+				arg.histoJetPt->Fill(jtpt->GetValue(ii));
 			}
 		}
 	}
 }
 
-void analysePF(struct pfData pf) {
+void analysePF(struct pfData arg) {
 	
 	// ------------------------------------- Declaring variables -------------------------------------
 	// Open file
-	TFile *myFile = TFile::Open(pf.filePath.c_str());
+	TFile *myFile = TFile::Open(arg.filePath.c_str());
 
 	// Set tree and leaves
 	TTree *pfTree = (TTree*)myFile->Get("pfcandAnalyzer/pfTree");
@@ -419,12 +422,17 @@ void analysePF(struct pfData pf) {
 	TLeaf *pfEta = pfTree->GetLeaf("pfEta");
 	TLeaf *pfPhi = pfTree->GetLeaf("pfPhi");
 
+	// Declare vectors to hold muon locations etc
+	std::vector<int> muonPosition;
+	std::vector< vector<int> > muonPairPosition;
+	std::vector<int> muonExclusion;
+
 	// Find number of events in tree
 	int nEvents = pfTree->GetEntries();
 
 	// ------------------------------------- Doing calculations and filling histograms -------------------------------------
 	// Loop over all events and perform actions
-	for (Int_t ii = (int)(100 / pf.nJobs*pf.job); ii <= (int)(100 / pf.nJobs*(pf.job + 1) - 1); ii++) {
+	for (Int_t ii = (int)(100 / arg.nJobs*arg.job); ii <= (int)(100 / arg.nJobs*(arg.job + 1) - 1); ii++) {
 
 		// Access the ii'th event
 		pfTree->GetEntry(ii);
@@ -435,7 +443,7 @@ void analysePF(struct pfData pf) {
 		cout << "counters set\n";
 
 		// Set vector size for use later
-		int position = pf.muonPosition->size();
+		int position = muonPosition.size();
 		cout << position << endl;
 
 		// Clear the vectors used in the last event
@@ -443,9 +451,9 @@ void analysePF(struct pfData pf) {
 //			std::vector<int, allocator<int> >::iterator begin = pf.muonPosition->begin(), end = pf.muonPosition->end();
 //			pf.muonPosition->erase(begin, end);
 			cout << "erased\n";
-			pf.muonPosition->clear();
-			pf.muonPairPosition->clear();
-			pf.muonExclusion->clear();
+			muonPosition.clear();
+			muonPairPosition.clear();
+			muonExclusion.clear();
 		}
 		cout << "cleared\n";
 		// The number of particles in the event
@@ -456,7 +464,7 @@ void analysePF(struct pfData pf) {
 
 			// Find number of muons, add particle position to vector, apply cuts.
 			if (pfId->GetValue(jj) == 3 && pfPt->GetValue(jj) > 7) {
-				pf.muonPosition->push_back(jj);
+				muonPosition.push_back(jj);
 				muonCounter++;
 				cout << "muon\n";
 
@@ -467,27 +475,27 @@ void analysePF(struct pfData pf) {
 		if (muonCounter >= 2) {
 			 int jj = -1;
 			 outperLoop:
-			 int whileLoopSize = pf.muonPosition.size() -1;
+			 int whileLoopSize = (muonPosition.size()) -1;
 
 			 while (jj < whileLoopSize) {
 				// Increment loop at the start to make up for the goto breaking before the end of the while loop
 				jj++;
 
 				// Fill histogram and set variables for data storage and keeping track of how many times a muon has been paired
-				histoMuonPt.Fill(pfPt->GetValue((*(pf.muonPosition))[jj]));
+				arg.histoMuonPt.Fill(pfPt->GetValue(muonPosition[jj]));
 
 				// Loop over each muon pair
-				for (Int_t kk = 0; kk < pf.muonPosition.size(); kk++) {
+				for (Int_t kk = 0; kk < muonPosition.size(); kk++) {
 					if (jj != kk) {
 
 						// Calculating invariant mass
-						double eta1 = pfEta->GetValue((*(pf->muonPosition))[jj]);
-						double eta2 = pfEta->GetValue((*(pf->muonPosition))[kk]);
-						double phi1 = pfPhi->GetValue((*(pf->muonPosition))[jj]);
-						double phi2 = pfPhi->GetValue((*(pf->muonPosition))[kk]);
+						double eta1 = pfEta->GetValue((*(muonPosition))[jj]);
+						double eta2 = pfEta->GetValue((*(muonPosition))[kk]);
+						double phi1 = pfPhi->GetValue((*(muonPosition))[jj]);
+						double phi2 = pfPhi->GetValue((*(muonPosition))[kk]);
 						double muonInvMass = 0.1056583715; //GeV/c^2
-						double pt1 = pfPt->GetValue((*(pf->muonPosition))[jj]);
-						double pt2 = pfPt->GetValue((*(pf->muonPosition))[kk]);
+						double pt1 = pfPt->GetValue((*(muonPosition))[jj]);
+						double pt2 = pfPt->GetValue((*(muonPosition))[kk]);
 						double e1;
 						double e2;
 						double px1;
@@ -538,7 +546,7 @@ void analysePF(struct pfData pf) {
 
 						}
 
-						pf.histoMotherInvMass.Fill(motherInvMass);
+						arg.histoMotherInvMass.Fill(motherInvMass);
 					}
 				}
 			}
