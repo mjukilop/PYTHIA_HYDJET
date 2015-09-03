@@ -16,7 +16,7 @@ echo "root -l -b -q macro.c"
 echo "I am in $PWD"   
 
 root -b <<EOF
-.x macro.c($JOB, $JOBS, $FILE);
+.x macro.c+($JOB, $JOBS, $FILE);
 .q
 EOF
 
