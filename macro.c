@@ -63,6 +63,14 @@ struct data{
 	TH2D* histoPtCompare3Small;
 	TH2D* histoPtCompare4Small;
 	TH2D* histoPtCompare5Small;
+	TH1D* histoJetPt3Large;
+	TH1D* histoJetPt4Large;
+	TH1D* histoJetPt5Large;
+	TH1D* histoJetB3Large;
+	TH1D* histoJetSumE3Large;
+	TH2D* histoPtCompare3Large;
+	TH2D* histoPtCompare4Large;
+	TH2D* histoPtCompare5Large;
 } args;
 
 void analysePF(struct data args);
@@ -97,10 +105,18 @@ void macro(const int job,const double nJobs, const int file) {
 	TH1D histoJetPt5Small("histoJetPt5Small", "Jet transverse momentum for valid jets, kt=0.5", 200, 0, 200);
 	TH1D histoJetB3Small("histoJetB3Small", "Jet 'b' parameter, explore", 500, -250, 250);
 	TH1D histoJetSumE3Small("histoSumE3Small", "Checking what eSum is", 500, -250, 250);
+	TH1D histoJetPt3Large("histoJetPt3Large", "Jet transverse momentum for valid jets, wide angle, kt=0.3", 200, 0, 200);
+	TH1D histoJetPt4Large("histoJetPt4Large", "Jet transverse momentum for valid jets, wide angle, kt=0.4", 200, 0, 200);
+	TH1D histoJetPt5Large("histoJetPt5Large", "Jet transverse momentum for valid jets, wide angle, kt=0.5", 200, 0, 200);
+	TH1D histoJetB3Large("histoJetB3Large", "Jet 'b' parameter, explore", 500, -250, 250);
+	TH1D histoJetSumE3Large("histoSumE3Large", "Checking what eSum is", 500, -250, 250);
 
 	TH2D histoPtCompare3Small("histoPtCompare3Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
 	TH2D histoPtCompare4Small("histoPtCompare4Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
 	TH2D histoPtCompare5Small("histoPtCompare5Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+	TH2D histoPtCompare3Large("histoPtCompare3Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+	TH2D histoPtCompare4Large("histoPtCompare4Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+	TH2D histoPtCompare5Large("histoPtCompare5Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
 
 	// Start the timer
 	timer.Start();
@@ -115,6 +131,7 @@ void macro(const int job,const double nJobs, const int file) {
 		instr >> fileName;
 	}
 	TFile *myFile = TFile::Open(fileName.c_str());
+	cout << "Opening file: " << fileName.c_str() << endl;
 
 	// Set struct variables for use in functions
 	args.myFile = myFile;
@@ -143,6 +160,14 @@ void macro(const int job,const double nJobs, const int file) {
 	args.histoPtCompare3Small = &histoPtCompare3Small;
 	args.histoPtCompare4Small = &histoPtCompare4Small;
 	args.histoPtCompare5Small = &histoPtCompare5Small;
+	args.histoJetPt3Large = &histoJetPt3Large;
+	args.histoJetPt4Large = &histoJetPt4Large;
+	args.histoJetPt5Large = &histoJetPt5Large;
+	args.histoJetB3Large = &histoJetB3Large;
+	args.histoJetSumE3Large = &histoJetSumE3Large;
+	args.histoPtCompare3Large = &histoPtCompare3Large;
+	args.histoPtCompare4Large = &histoPtCompare4Large;
+	args.histoPtCompare5Large = &histoPtCompare5Large;
 
 	// analysePF
 	analysePF(args);
@@ -169,11 +194,19 @@ void macro(const int job,const double nJobs, const int file) {
 	histoJetPt5Small.Write();
 	histoJetB3Small.Write();
 	histoJetSumE3Small.Write();
+	histoJetPt3Large.Write();
+	histoJetPt4Large.Write();
+	histoJetPt5Large.Write();
+	histoJetB3Large.Write();
+	histoJetSumE3Large.Write();
 
 	// Write histograms both
 	histoPtCompare3Small.Write();
 	histoPtCompare4Small.Write();
 	histoPtCompare5Small.Write();
+	histoPtCompare3Large.Write();
+	histoPtCompare4Large.Write();
+	histoPtCompare5Large.Write();
 
 	out_file.Close();
 
@@ -265,10 +298,10 @@ void analyseJet(struct data arg) {
 	for (int ii = 0; ii < motherLength; ii++) {
 		for (int jj = 0; jj < nEvents3; jj++) {
 			if (abs(jtPhi3->GetValue(jj) - arg.motherPhi->at(ii)) > M_PI / 2) {
-				arg.histoJetPt3Small->Fill(jtPt3->GetValue(jj));
-				arg.histoJetB3Small->Fill(jtB3->GetValue(jj));
-				arg.histoJetSumE3Small->Fill(jtSumE3->GetValue(jj));
-				arg.histoPtCompare3Small->Fill(arg.motherPt->at(ii), jtPt3->GetValue(jj));
+				arg.histoJetPt3Large->Fill(jtPt3->GetValue(jj));
+				arg.histoJetB3Large->Fill(jtB3->GetValue(jj));
+				arg.histoJetSumE3Large->Fill(jtSumE3->GetValue(jj));
+				arg.histoPtCompare3Large->Fill(arg.motherPt->at(ii), jtPt3->GetValue(jj));
 			}
 		}
 	}
@@ -279,8 +312,8 @@ void analyseJet(struct data arg) {
 	for (int ii = 0; ii < motherLength; ii++) {
 		for (int jj = 0; jj < nEvents4; jj++) {
 			if (abs(jtPhi4->GetValue(jj) - arg.motherPhi->at(ii)) > M_PI / 2) {
-				arg.histoJetPt4Small->Fill(jtPt4->GetValue(jj));
-				arg.histoPtCompare4Small->Fill(arg.motherPt->at(ii), jtPt4->GetValue(jj));
+				arg.histoJetPt4Large->Fill(jtPt4->GetValue(jj));
+				arg.histoPtCompare4Large->Fill(arg.motherPt->at(ii), jtPt4->GetValue(jj));
 			}
 		}
 	}
@@ -291,8 +324,8 @@ void analyseJet(struct data arg) {
 	for (int ii = 0; ii < motherLength; ii++) {
 		for (int jj = 0; jj < nEvents5; jj++) {
 			if (abs(jtPhi5->GetValue(jj) - arg.motherPhi->at(ii)) > M_PI / 2) {
-				arg.histoJetPt5Small->Fill(jtPt5->GetValue(jj));
-				arg.histoPtCompare5Small->Fill(arg.motherPt->at(ii), jtPt5->GetValue(jj));
+				arg.histoJetPt5Large->Fill(jtPt5->GetValue(jj));
+				arg.histoPtCompare5Large->Fill(arg.motherPt->at(ii), jtPt5->GetValue(jj));
 			}
 		}
 	}
