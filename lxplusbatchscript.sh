@@ -23,7 +23,7 @@ then
 				export JOB=$job 
 				export JOBS=$nJobs
 				echo "File = $file"
-				echo "#Jobs = $nJobs"   
+				echo "Job = $job"   
 				bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
 				let "jobsSubmitted++"
 				let "i++"
@@ -40,8 +40,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs" 
+			echo "Job = $job" 
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 30 ]
@@ -55,8 +56,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 50 ]
@@ -70,8 +72,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 80 ]
@@ -85,8 +88,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 120 ]
@@ -100,8 +104,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
-			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			echo "Job = $job"  
+			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 8nm -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 170 ]
@@ -115,8 +120,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 220 ]
@@ -130,8 +136,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 280 ]
@@ -145,8 +152,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	elif [ $2 -eq 370 ]
@@ -160,8 +168,9 @@ then
 			export JOB=$job 
 			export JOBS=$nJobs
 			echo "File = $file"
-			echo "#Jobs = $nJobs"  
+			echo "Job = $job"  
 			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nd -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			let "jobsSubmitted++"
 			let "i++"
 		done
 	fi

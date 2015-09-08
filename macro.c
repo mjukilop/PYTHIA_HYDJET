@@ -30,6 +30,7 @@
 #include <fstream>
 #include <TRandom.h>
 #include <vector>
+#include <exception>
 #include <stdio.h>
 #include <string.h>
 
@@ -44,6 +45,7 @@ struct data{
 	std::vector<double>* motherMass;
 	std::vector<double>* motherEta;
 	std::vector<double>* motherPhi;
+	std::vector<double>* motherTheta;
 	std::vector<double>* motherPt;
 	TH1D* histoMotherInvMass;
 	TH1D* histoMuonPtCut;
@@ -68,266 +70,188 @@ struct data{
 	TH1D* histoJetPt5Large;
 	TH1D* histoJetB3Large;
 	TH1D* histoJetSumE3Large;
+	TH1D* histoPtDiff3Small;
 	TH2D* histoPtCompare3Large;
 	TH2D* histoPtCompare4Large;
 	TH2D* histoPtCompare5Large;
+	TH1D* histoZhaveJetSmall;
+	TH1D* histoZhaveJetLarge;
+	TH1D* histoPtDiff3Large;
+	TH1D* histoEventPlanes;
 } args;
 
 void analysePF(struct data args);
 void analyseJet(struct data args);
+void analyseEventPlane(struct data args);
 
 void macro(const int job,const double nJobs, const int file) {
+	try {
+		// Declare variables
+		TStopwatch timer;
 
-	// Declare variables
-	TStopwatch timer;
+		int eventNum = 0;
 
-	int eventNum = 0;
+		std::vector<double> motherMass;
+		std::vector<double> motherPhi;
+		std::vector<double> motherTheta;
+		std::vector<double> motherEta;
+		std::vector<double> motherPt;
+		std::vector<double> motherE;
 
-	std::vector<double> motherMass;
-	std::vector<double> motherPhi;
-	std::vector<double> motherEta;
-	std::vector<double> motherPt;
-	std::vector<double> motherE;
-	
-	TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 200, 0, 200);
-	TH1D histoSumPtCut("histoSumPtCut", "Sum Muon Transverse Momentum for Z Events", 200, 0, 200);
-	TH1D histoMuonPtCut("histoMuonPtCut", "Individual muon transverse momentum (after cuts)", 200, 0, 200);
-	TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum (all)", 200, 0, 200);
-	TH1D histoMuonPerEvent("histoMuonPerEvent", "Number of Muons per Event", 10, -0.5, 9.5);
-	TH1D histoMotherInvMass("histoMotherInvMass", "Invariant mass of dimuon mother particle", 200, 0, 200);
-	TH1D histoMotherPhi("histoMotherPhi", "Phi of dimuon mother particle", 628, 0, 2 * M_PI);
-	TH1D histoMotherEta("histoMotherEta", "Eta of dimuon mother particle", 150, 0, 150);
-	TH1D histoMotherTheta("histoMotherTheta", "Theta of dimuon mother particle", 1256, -2 * M_PI, 2 * M_PI);
-	TH1D histoMotherPt("histoMotherPt", "Transverse momentum of dimuon mother particle (calculated component-wise from muons)", 200, 0, 200);
+		TH1D histoSumPt("histoSumPt", "Sum Transverse Momentum", 200, 0, 200);
+		TH1D histoSumPtCut("histoSumPtCut", "Sum Muon Transverse Momentum for Z Events", 200, 0, 200);
+		TH1D histoMuonPtCut("histoMuonPtCut", "Individual muon transverse momentum (after cuts)", 200, 0, 200);
+		TH1D histoMuonPt("histoMuonPt", "Individual muon transverse momentum (all)", 200, 0, 200);
+		TH1D histoMuonPerEvent("histoMuonPerEvent", "Number of Muons per Event", 10, -0.5, 9.5);
+		TH1D histoMotherInvMass("histoMotherInvMass", "Invariant mass of dimuon mother particle", 200, 0, 200);
+		TH1D histoMotherPhi("histoMotherPhi", "Phi of dimuon mother particle", 628, 0, 2 * M_PI);
+		TH1D histoMotherEta("histoMotherEta", "Eta of dimuon mother particle", 150, 0, 150);
+		TH1D histoMotherTheta("histoMotherTheta", "Theta of dimuon mother particle", 1256, -2 * M_PI, 2 * M_PI);
+		TH1D histoMotherPt("histoMotherPt", "Transverse momentum of dimuon mother particle (calculated component-wise from muons)", 200, 0, 200);
 
-	TH1D histoJetPt3Small("histoJetPt3Small", "Jet transverse momentum for valid jets, kt=0.3", 200, 0, 200);
-	TH1D histoJetPt4Small("histoJetPt4Small", "Jet transverse momentum for valid jets, kt=0.4", 200, 0, 200);
-	TH1D histoJetPt5Small("histoJetPt5Small", "Jet transverse momentum for valid jets, kt=0.5", 200, 0, 200);
-	TH1D histoJetB3Small("histoJetB3Small", "Jet 'b' parameter, explore", 500, -250, 250);
-	TH1D histoJetSumE3Small("histoSumE3Small", "Checking what eSum is", 500, -250, 250);
-	TH1D histoJetPt3Large("histoJetPt3Large", "Jet transverse momentum for valid jets, wide angle, kt=0.3", 200, 0, 200);
-	TH1D histoJetPt4Large("histoJetPt4Large", "Jet transverse momentum for valid jets, wide angle, kt=0.4", 200, 0, 200);
-	TH1D histoJetPt5Large("histoJetPt5Large", "Jet transverse momentum for valid jets, wide angle, kt=0.5", 200, 0, 200);
-	TH1D histoJetB3Large("histoJetB3Large", "Jet 'b' parameter, explore", 500, -250, 250);
-	TH1D histoJetSumE3Large("histoSumE3Large", "Checking what eSum is", 500, -250, 250);
+		TH1D histoJetPt3Small("histoJetPt3Small", "Jet transverse momentum for valid jets, kt=0.3", 200, 0, 200);
+		TH1D histoJetPt4Small("histoJetPt4Small", "Jet transverse momentum for valid jets, kt=0.4", 200, 0, 200);
+		TH1D histoJetPt5Small("histoJetPt5Small", "Jet transverse momentum for valid jets, kt=0.5", 200, 0, 200);
+		TH1D histoJetB3Small("histoJetB3Small", "Jet 'b' parameter, explore", 500, -250, 250);
+		TH1D histoJetSumE3Small("histoSumE3Small", "Checking what eSum is", 500, -250, 250);
+		TH1D histoJetPt3Large("histoJetPt3Large", "Jet transverse momentum for valid jets, wide angle, kt=0.3", 200, 0, 200);
+		TH1D histoJetPt4Large("histoJetPt4Large", "Jet transverse momentum for valid jets, wide angle, kt=0.4", 200, 0, 200);
+		TH1D histoJetPt5Large("histoJetPt5Large", "Jet transverse momentum for valid jets, wide angle, kt=0.5", 200, 0, 200);
+		TH1D histoJetB3Large("histoJetB3Large", "Jet 'b' parameter, explore", 500, -250, 250);
+		TH1D histoJetSumE3Large("histoSumE3Large", "Checking what eSum is", 500, -250, 250);
 
-	TH2D histoPtCompare3Small("histoPtCompare3Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
-	TH2D histoPtCompare4Small("histoPtCompare4Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
-	TH2D histoPtCompare5Small("histoPtCompare5Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
-	TH2D histoPtCompare3Large("histoPtCompare3Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
-	TH2D histoPtCompare4Large("histoPtCompare4Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
-	TH2D histoPtCompare5Large("histoPtCompare5Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+		TH1D histoPtDiff3Small("histoPtDiff3Small", "The difference in transverse momentum between the Z and the highest pT jet, kt=0.3", 200, -100, 100);
+		TH1D histoPtDiff3Large("histoPtDiff3Large", "The difference in transverse momentum between the Z and the highest pT jet, kt=0.3", 200, -100, 100);
+		TH1D histoZhaveJetSmall("histoZhaveJetSmall", "How many Z's have a jet in the opposite direction, 0=no, 1=yes", 3, -0.5, 2.5);
+		TH1D histoZhaveJetLarge("histoZhaveJetLarge", "How many Z's have a jet in the opposite direction, 0=no, 1=yes", 3, -0.5, 2.5);
 
-	// Start the timer
-	timer.Start();
+		TH2D histoPtCompare3Small("histoPtCompare3Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+		TH2D histoPtCompare4Small("histoPtCompare4Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+		TH2D histoPtCompare5Small("histoPtCompare5Small", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+		TH2D histoPtCompare3Large("histoPtCompare3Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+		TH2D histoPtCompare4Large("histoPtCompare4Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
+		TH2D histoPtCompare5Large("histoPtCompare5Large", "Comparing x=MotherPt, y=JetPt", 200, 0, 200, 200, 0, 200);
 
-	// Opening file and setting tree
-	string inFile;
-	inFile = "rootfiles.txt";
-	ifstream instr(inFile.c_str(), std::ifstream::in);
-	string fileName;
-	// Reading up to and stop on our file
-	for (int lineNum = 1; lineNum <= file; lineNum++) {
-		instr >> fileName;
-	}
-	TFile *myFile = TFile::Open(fileName.c_str());
-	cout << "Opening file: " << fileName.c_str() << endl;
+		TH1D histoEventPlanes("histoEevntPlanes", "Event Planes", M_PI * 200, 0, 2 * M_PI);
 
-	// Set struct variables for use in functions
-	args.myFile = myFile;
-	args.eventNum = eventNum;
-	args.job = job;
-	args.nJobs = nJobs;
-	args.motherMass = &motherMass;
-	args.motherEta = &motherEta;
-	args.motherPhi = &motherPhi;
-	args.motherPt = &motherPt;
-	args.histoMotherInvMass = &histoMotherInvMass;
-	args.histoMuonPtCut = &histoMuonPtCut;
-	args.histoSumPt = &histoSumPt;
-	args.histoSumPtCut = &histoSumPtCut;
-	args.histoMuonPt = &histoMuonPt;
-	args.histoMuonPerEvent = &histoMuonPerEvent;
-	args.histoMotherPhi = &histoMotherPhi;
-	args.histoMotherEta = &histoMotherEta;
-	args.histoMotherTheta = &histoMotherTheta;
-	args.histoMotherPt = &histoMotherPt;
-	args.histoJetPt3Small = &histoJetPt3Small;
-	args.histoJetPt4Small = &histoJetPt4Small;
-	args.histoJetPt5Small = &histoJetPt5Small;
-	args.histoJetB3Small = &histoJetB3Small;
-	args.histoJetSumE3Small = &histoJetSumE3Small;
-	args.histoPtCompare3Small = &histoPtCompare3Small;
-	args.histoPtCompare4Small = &histoPtCompare4Small;
-	args.histoPtCompare5Small = &histoPtCompare5Small;
-	args.histoJetPt3Large = &histoJetPt3Large;
-	args.histoJetPt4Large = &histoJetPt4Large;
-	args.histoJetPt5Large = &histoJetPt5Large;
-	args.histoJetB3Large = &histoJetB3Large;
-	args.histoJetSumE3Large = &histoJetSumE3Large;
-	args.histoPtCompare3Large = &histoPtCompare3Large;
-	args.histoPtCompare4Large = &histoPtCompare4Large;
-	args.histoPtCompare5Large = &histoPtCompare5Large;
+		// Start the timer
+		timer.Start();
 
-	// analysePF
-	analysePF(args);
-
-	// Open root file, store histograms and close it
-	TFile out_file(Form("myhisto%d_file%d.root", job, file), "RECREATE");
-
-	// Write histograms filled in analysePF
-	histoSumPt.Write();
-	histoSumPtCut.Write();
-	histoMuonPtCut.Write();
-	histoMuonPt.Write();
-	histoMuonPerEvent.Write();
-	histoMotherInvMass.Write();
-	histoMotherPt.Write();
-	histoMuonPt.Write();
-	histoMotherPhi.Write();
-	histoMotherEta.Write();
-	histoMotherTheta.Write();
-
-	// Write histograms filled in analyseJet
-	histoJetPt3Small.Write();
-	histoJetPt4Small.Write();
-	histoJetPt5Small.Write();
-	histoJetB3Small.Write();
-	histoJetSumE3Small.Write();
-	histoJetPt3Large.Write();
-	histoJetPt4Large.Write();
-	histoJetPt5Large.Write();
-	histoJetB3Large.Write();
-	histoJetSumE3Large.Write();
-
-	// Write histograms both
-	histoPtCompare3Small.Write();
-	histoPtCompare4Small.Write();
-	histoPtCompare5Small.Write();
-	histoPtCompare3Large.Write();
-	histoPtCompare4Large.Write();
-	histoPtCompare5Large.Write();
-
-	out_file.Close();
-
-	// Stop timer and print time taken
-	timer.Stop();
-	float rTime = timer.RealTime();
-	float cTime = timer.CpuTime();
-
-	cout << "\t" << endl;
-	cout << Form("RealTime=%f seconds, CpuTime=%f seconds", rTime, cTime) << endl;
-	cout << "\t" << endl;
-	cout << "Good bye : " << "\t" << endl;
-}
-
-void analyseJet(struct data arg) {
-
-	// ------------------------------------- Declaring variables -------------------------------------
-	// Set tree and leaves
-	TTree *jetTree3 = (TTree*)arg.myFile->Get("akPu3PFJetAnalyzer/t");
-	TLeaf *jtPt3 = jetTree3->GetLeaf("jtpt");
-	TLeaf *jtPhi3 = jetTree3->GetLeaf("jtphi");
-//	TLeaf *jtEta3 = jetTree3->GetLeaf("jteta");
-	TLeaf *jtB3 = jetTree3->GetLeaf("b");
-	TLeaf *jtSumE3 = jetTree3->GetLeaf("eSum");
-
-	TTree *jetTree4 = (TTree*)arg.myFile->Get("akPu4PFJetAnalyzer/t");
-	TLeaf *jtPt4 = jetTree4->GetLeaf("jtpt");
-	TLeaf *jtPhi4 = jetTree4->GetLeaf("jtphi");
-
-	TTree *jetTree5 = (TTree*)arg.myFile->Get("akPu5PFJetAnalyzer/t");
-	TLeaf *jtPt5 = jetTree5->GetLeaf("jtpt");
-	TLeaf *jtPhi5 = jetTree5->GetLeaf("jtphi");
-
-	cout << "analysing Jet with eventNum = " << arg.eventNum << endl;
-
-	// Find number of events in TLeaf jtPhi
-	int nEvents3 = jtPhi3->GetLen();
-	int nEvents4 = jtPhi4->GetLen();
-	int nEvents5 = jtPhi5->GetLen();
-
-	// Find motherPhi.length() for use in the loop
-	int motherLength = arg.motherPhi->size();
-
-	// ------------------------------------- Doing calculations and filling histograms -------------------------------------
-	// Access the ii'th event, 3
-	jetTree3->GetEntry(arg.eventNum);
-	
-	// Loop over all mother particles and compare them with each jet
-	for (int ii = 0; ii < motherLength; ii++) {
-		for (int jj = 0; jj < nEvents3; jj++) {
-			if (abs(jtPhi3->GetValue(jj) - arg.motherPhi->at(ii)) > 2 * M_PI / 3) {
-				arg.histoJetPt3Small->Fill(jtPt3->GetValue(jj));
-				arg.histoJetB3Small->Fill(jtB3->GetValue(jj));
-				arg.histoJetSumE3Small->Fill(jtSumE3->GetValue(jj));
-				arg.histoPtCompare3Small->Fill(arg.motherPt->at(ii), jtPt3->GetValue(jj));
-			}
+		// Opening file and setting tree
+		string inFile;
+		inFile = "rootfiles.txt";
+		ifstream instr(inFile.c_str(), std::ifstream::in);
+		string fileName;
+		// Reading up to and stop on our file
+		for (int lineNum = 1; lineNum <= file; lineNum++) {
+			instr >> fileName;
+			//std::getline(instr, fileName);
 		}
+		TFile *myFile = TFile::Open(fileName.c_str());
+		cout << "Opening file: " << fileName.c_str() << endl;
+
+		// Set struct variables for use in functions
+		args.myFile = myFile;
+		args.eventNum = eventNum;
+		args.job = job;
+		args.nJobs = nJobs;
+		args.motherMass = &motherMass;
+		args.motherEta = &motherEta;
+		args.motherPhi = &motherPhi;
+		args.motherTheta = &motherTheta;
+		args.motherPt = &motherPt;
+		args.histoMotherInvMass = &histoMotherInvMass;
+		args.histoMuonPtCut = &histoMuonPtCut;
+		args.histoSumPt = &histoSumPt;
+		args.histoSumPtCut = &histoSumPtCut;
+		args.histoMuonPt = &histoMuonPt;
+		args.histoMuonPerEvent = &histoMuonPerEvent;
+		args.histoMotherPhi = &histoMotherPhi;
+		args.histoMotherEta = &histoMotherEta;
+		args.histoMotherTheta = &histoMotherTheta;
+		args.histoMotherPt = &histoMotherPt;
+		args.histoJetPt3Small = &histoJetPt3Small;
+		args.histoJetPt4Small = &histoJetPt4Small;
+		args.histoJetPt5Small = &histoJetPt5Small;
+		args.histoJetB3Small = &histoJetB3Small;
+		args.histoJetSumE3Small = &histoJetSumE3Small;
+		args.histoPtCompare3Small = &histoPtCompare3Small;
+		args.histoPtCompare4Small = &histoPtCompare4Small;
+		args.histoPtCompare5Small = &histoPtCompare5Small;
+		args.histoJetPt3Large = &histoJetPt3Large;
+		args.histoJetPt4Large = &histoJetPt4Large;
+		args.histoJetPt5Large = &histoJetPt5Large;
+		args.histoJetB3Large = &histoJetB3Large;
+		args.histoJetSumE3Large = &histoJetSumE3Large;
+		args.histoPtDiff3Small = &histoPtDiff3Small;
+		args.histoPtCompare3Large = &histoPtCompare3Large;
+		args.histoPtCompare4Large = &histoPtCompare4Large;
+		args.histoPtCompare5Large = &histoPtCompare5Large;
+		args.histoZhaveJetSmall = &histoZhaveJetSmall;
+		args.histoZhaveJetLarge = &histoZhaveJetLarge;
+		args.histoPtDiff3Large = &histoPtDiff3Large;
+		args.histoEventPlanes = &histoEventPlanes;
+
+		// analysePF
+		analysePF(args);
+
+		// Open root file, store histograms and close it
+		TFile out_file(Form("myhisto%d_file%d.root", job, file), "RECREATE");
+
+		// Write histograms filled in analysePF
+		histoSumPt.Write();
+		histoSumPtCut.Write();
+		histoMuonPtCut.Write();
+		histoMuonPt.Write();
+		histoMuonPerEvent.Write();
+		histoMotherInvMass.Write();
+		histoMotherPt.Write();
+		histoMuonPt.Write();
+		histoMotherPhi.Write();
+		histoMotherEta.Write();
+		histoMotherTheta.Write();
+
+		// Write histograms filled in analyseJet
+		histoJetPt3Small.Write();
+		histoJetPt4Small.Write();
+		histoJetPt5Small.Write();
+		histoJetB3Small.Write();
+		histoJetSumE3Small.Write();
+		histoJetPt3Large.Write();
+		histoJetPt4Large.Write();
+		histoJetPt5Large.Write();
+		histoJetB3Large.Write();
+		histoJetSumE3Large.Write();
+		histoPtDiff3Small.Write();
+		histoZhaveJetSmall.Write();
+		histoZhaveJetLarge.Write();
+		histoPtDiff3Large.Write();
+
+		// Write histograms both
+		histoPtCompare3Small.Write();
+		histoPtCompare4Small.Write();
+		histoPtCompare5Small.Write();
+		histoPtCompare3Large.Write();
+		histoPtCompare4Large.Write();
+		histoPtCompare5Large.Write();
+
+		// Write histograms filled in analyseEventPlane
+		histoEventPlanes.Write();
+
+		out_file.Close();
+
+		// Stop timer and print time taken
+		timer.Stop();
+		float rTime = timer.RealTime();
+		float cTime = timer.CpuTime();
+
+		cout << "\t" << endl;
+		cout << Form("RealTime=%f seconds, CpuTime=%f seconds", rTime, cTime) << endl;
+		cout << "\t" << endl;
+		cout << "Good bye : " << "\t" << endl;
 	}
-
-	// 4
-	jetTree4->GetEntry(arg.eventNum);
-
-	for (int ii = 0; ii < motherLength; ii++) {
-		for (int jj = 0; jj < nEvents4; jj++) {
-			if (abs(jtPhi4->GetValue(jj) - arg.motherPhi->at(ii)) > 2 * M_PI / 3) {
-				arg.histoJetPt4Small->Fill(jtPt4->GetValue(jj));
-				arg.histoPtCompare4Small->Fill(arg.motherPt->at(ii), jtPt4->GetValue(jj));
-			}
-		}
-	}
-
-	// 5
-	jetTree5->GetEntry(arg.eventNum);
-
-	for (int ii = 0; ii < motherLength; ii++) {
-		for (int jj = 0; jj < nEvents5; jj++) {
-			if (abs(jtPhi5->GetValue(jj) - arg.motherPhi->at(ii)) > 2 * M_PI / 3) {
-				arg.histoJetPt5Small->Fill(jtPt5->GetValue(jj));
-				arg.histoPtCompare5Small->Fill(arg.motherPt->at(ii), jtPt5->GetValue(jj));
-			}
-		}
-	}
-
-	// Do the same calculations and filling with a larger angle range for jets
-	// Access the ii'th event, 3
-	jetTree3->GetEntry(arg.eventNum);
-
-	// Loop over all mother particles and compare them with each jet
-	for (int ii = 0; ii < motherLength; ii++) {
-		for (int jj = 0; jj < nEvents3; jj++) {
-			if (abs(jtPhi3->GetValue(jj) - arg.motherPhi->at(ii)) > M_PI / 2) {
-				arg.histoJetPt3Large->Fill(jtPt3->GetValue(jj));
-				arg.histoJetB3Large->Fill(jtB3->GetValue(jj));
-				arg.histoJetSumE3Large->Fill(jtSumE3->GetValue(jj));
-				arg.histoPtCompare3Large->Fill(arg.motherPt->at(ii), jtPt3->GetValue(jj));
-			}
-		}
-	}
-
-	// 4
-	jetTree4->GetEntry(arg.eventNum);
-
-	for (int ii = 0; ii < motherLength; ii++) {
-		for (int jj = 0; jj < nEvents4; jj++) {
-			if (abs(jtPhi4->GetValue(jj) - arg.motherPhi->at(ii)) > M_PI / 2) {
-				arg.histoJetPt4Large->Fill(jtPt4->GetValue(jj));
-				arg.histoPtCompare4Large->Fill(arg.motherPt->at(ii), jtPt4->GetValue(jj));
-			}
-		}
-	}
-
-	// 5
-	jetTree5->GetEntry(arg.eventNum);
-
-	for (int ii = 0; ii < motherLength; ii++) {
-		for (int jj = 0; jj < nEvents5; jj++) {
-			if (abs(jtPhi5->GetValue(jj) - arg.motherPhi->at(ii)) > M_PI / 2) {
-				arg.histoJetPt5Large->Fill(jtPt5->GetValue(jj));
-				arg.histoPtCompare5Large->Fill(arg.motherPt->at(ii), jtPt5->GetValue(jj));
-			}
-		}
+	catch (std::exception& e) {
+		cout << "EXCEPTION CAUGHT! It says: " << e.what() << std::endl;
 	}
 }
 
@@ -369,6 +293,9 @@ void analysePF(struct data arg) {
 			muonPairPosition.clear();
 			muonExclusion.clear();
 			arg.motherPt->clear();
+			arg.motherPhi->clear();
+			arg.motherMass->clear();
+			arg.motherEta->clear();
 		}
 
 		// The number of particles in the event
@@ -378,11 +305,12 @@ void analysePF(struct data arg) {
 		for (Int_t jj = 0; jj < nParticles; jj++) {
 
 			// Find number of muons, add particle position to vector, apply cuts.
-			if (pfId->GetValue(jj) == 3 && pfPt->GetValue(jj) > 7) {
-				muonPosition.push_back(jj);
-				muonCounter++;
-
+			if (pfId->GetValue(jj) == 3) {
 				arg.histoMuonPt->Fill(pfPt->GetValue(jj));
+				if (pfPt->GetValue(jj) > 7) {
+					muonPosition.push_back(jj);
+					muonCounter++;
+				}
 			}
 		}
 
@@ -462,8 +390,9 @@ void analysePF(struct data arg) {
 						arg.motherMass->push_back(motherInvMass);
 						arg.motherEta->push_back(motherEtaTemp);
 						arg.motherPhi->push_back(motherPhiTemp);
+						arg.motherTheta->push_back(motherThetaTemp);
 						arg.motherPt->push_back(motherPtTemp);
-						arg.histoSumPtCut(pt1 + pt2);
+						arg.histoSumPtCut->Fill(pt1 + pt2);
 						cout << "We have a big muon" << endl;
 
 					}
@@ -477,5 +406,301 @@ void analysePF(struct data arg) {
 			}
 			analyseJet(arg);
 		}
+		analyseEventPlane(arg);
 	}
+}
+
+void analyseJet(struct data arg) {
+
+	// ------------------------------------- Declaring variables -------------------------------------
+	// Set tree and leaves
+	TTree *jetTree3 = (TTree*)arg.myFile->Get("akPu3PFJetAnalyzer/t");
+	TLeaf *jtPt3 = jetTree3->GetLeaf("jtpt");
+	TLeaf *jtPhi3 = jetTree3->GetLeaf("jtphi");
+	TLeaf *jtEta3 = jetTree3->GetLeaf("jteta");
+	TLeaf *jtB3 = jetTree3->GetLeaf("b");
+	TLeaf *jtSumE3 = jetTree3->GetLeaf("eSum");
+
+	TTree *jetTree4 = (TTree*)arg.myFile->Get("akPu4PFJetAnalyzer/t");
+	TLeaf *jtPt4 = jetTree4->GetLeaf("jtpt");
+	TLeaf *jtPhi4 = jetTree4->GetLeaf("jtphi");
+	TLeaf *jtEta4 = jetTree3->GetLeaf("jteta");
+
+	TTree *jetTree5 = (TTree*)arg.myFile->Get("akPu5PFJetAnalyzer/t");
+	TLeaf *jtPt5 = jetTree5->GetLeaf("jtpt");
+	TLeaf *jtPhi5 = jetTree5->GetLeaf("jtphi");
+	TLeaf *jtEta5 = jetTree3->GetLeaf("jteta");
+
+	cout << "analysing Jet with eventNum = " << arg.eventNum << endl;
+
+	// Find number of events in TLeaf jtPhi
+	int nEvents3 = jtPhi3->GetLen();
+	int nEvents4 = jtPhi4->GetLen();
+	int nEvents5 = jtPhi5->GetLen();
+
+	// Find motherPhi length for use in the loop
+	int motherLength = arg.motherPhi->size();
+
+	// Set int storing position of highest transverse momentum jet
+	double highPtJet = 0;
+	int highPtJetPos = 0;
+
+	// Bool to see if each Z has a corresonding jet
+	bool zHaveJet = false;
+
+	// ------------------------------------- Doing calculations and filling histograms -------------------------------------
+	// Access the ii'th event, 3
+	jetTree3->GetEntry(arg.eventNum);
+
+	// Loop over all mother particles and compare them with each jet
+	for (int ii = 0; ii < motherLength; ii++) {
+		for (int jj = 0; jj < nEvents3; jj++) {
+			
+			// Find jet theta to compare with Z direction
+			double jtTheta = 2 * atan(exp(-1 * jtEta3->GetValue(jj)));
+			
+			// Set opposite Z angle
+			double zPhi = arg.motherPhi->at(ii);
+			double zTheta = arg.motherTheta->at(ii);
+			double oppZPhi = 0;
+			double oppZTheta = 0;
+			if (zPhi > M_PI) {
+				oppZPhi = zPhi - M_PI;
+			}
+			else if (zPhi < M_PI) {
+				oppZPhi = zPhi + M_PI;
+			}
+			if (zTheta > M_PI) {
+				oppZTheta = zTheta - M_PI;
+			}
+			else if (zTheta < M_PI) {
+				oppZTheta = zTheta + M_PI;
+			}
+
+			if (sqrt(pow((oppZPhi - jtPhi3->GetValue(jj)), 2) + pow((oppZTheta - jtTheta), 2)) < (M_PI / 6)) {
+				double jetPt = jtPt3->GetValue(jj);
+				arg.histoJetPt3Small->Fill(jetPt);
+				arg.histoJetB3Small->Fill(jtB3->GetValue(jj));
+				arg.histoJetSumE3Small->Fill(jtSumE3->GetValue(jj));
+				arg.histoPtCompare3Small->Fill(arg.motherPt->at(ii), jetPt);
+				zHaveJet = true;
+				if (jetPt > highPtJet) {
+					highPtJet = jetPt;
+					highPtJetPos = jj;
+				}
+			}
+		}
+		arg.histoZhaveJetSmall->Fill(((int)zHaveJet));
+		zHaveJet = false;
+
+		double ptDiff = arg.motherPt->at(ii) - jtPt3->GetValue(highPtJetPos);
+		arg.histoPtDiff3Small->Fill(ptDiff);
+
+		highPtJet = 0;
+		highPtJetPos = 0;
+	}
+
+
+
+	// 4
+	jetTree4->GetEntry(arg.eventNum);
+
+	for (int ii = 0; ii < motherLength; ii++) {
+		for (int jj = 0; jj < nEvents4; jj++) {
+
+			// Find jet theta to compare with Z direction
+			double jtTheta = 2 * atan(exp(-1 * jtEta4->GetValue(jj)));
+
+			// Set opposite Z angle
+			double zPhi = arg.motherPhi->at(ii);
+			double zTheta = arg.motherTheta->at(ii);
+			double oppZPhi = 0;
+			double oppZTheta = 0;
+			if (zPhi > M_PI) {
+			 oppZPhi = zPhi - M_PI;
+			}
+			else if (zPhi < M_PI) {
+			 oppZPhi = zPhi + M_PI;
+			}
+			if (zTheta > M_PI) {
+			 oppZTheta = zTheta - M_PI;
+			}
+			else if (zTheta < M_PI) {
+			 oppZTheta = zTheta + M_PI;
+			}
+
+			if (sqrt(pow((oppZPhi - jtPhi4->GetValue(jj)), 2) + pow((oppZTheta - jtTheta), 2)) < (M_PI / 6)) {
+				arg.histoJetPt4Small->Fill(jtPt4->GetValue(jj));
+				arg.histoPtCompare4Small->Fill(arg.motherPt->at(ii), jtPt4->GetValue(jj));
+			}
+		}
+	}
+
+	// 5
+	jetTree5->GetEntry(arg.eventNum);
+
+	for (int ii = 0; ii < motherLength; ii++) {
+		for (int jj = 0; jj < nEvents5; jj++) {
+
+			// Find jet theta to compare with Z direction
+			double jtTheta = 2 * atan(exp(-1 * jtEta5->GetValue(jj)));
+
+			// Set opposite Z angle
+			double zPhi = arg.motherPhi->at(ii);
+			double zTheta = arg.motherTheta->at(ii);
+			double oppZPhi = 0;
+			double oppZTheta = 0;
+			if (zPhi > M_PI) {
+				oppZPhi = zPhi - M_PI;
+			}
+			else if (zPhi < M_PI) {
+				oppZPhi = zPhi + M_PI;
+			}
+			if (zTheta > M_PI) {
+				oppZTheta = zTheta - M_PI;
+			}
+			else if (zTheta < M_PI) {
+				oppZTheta = zTheta + M_PI;
+			}
+
+			if (sqrt(pow((oppZPhi - jtPhi5->GetValue(jj)), 2) + pow((oppZTheta - jtTheta), 2)) < (M_PI / 6)) {
+				arg.histoJetPt5Small->Fill(jtPt5->GetValue(jj));
+				arg.histoPtCompare5Small->Fill(arg.motherPt->at(ii), jtPt5->GetValue(jj));
+			}
+		}
+	}
+
+	// Do the same calculations and filling with a larger angle range for jets
+	// Access the ii'th event, 3
+	jetTree3->GetEntry(arg.eventNum);
+
+	// Loop over all mother particles and compare them with each jet
+	for (int ii = 0; ii < motherLength; ii++) {
+		for (int jj = 0; jj < nEvents3; jj++) {
+
+			// Find jet theta to compare with Z direction
+			double jtTheta = 2 * atan(exp(-1 * jtEta3->GetValue(jj)));
+
+			// Set opposite Z angle
+			double zPhi = arg.motherPhi->at(ii);
+			double zTheta = arg.motherTheta->at(ii);
+			double oppZPhi = 0;
+			double oppZTheta = 0;
+			if (zPhi > M_PI) {
+				oppZPhi = zPhi - M_PI;
+			}
+			else if (zPhi < M_PI) {
+				oppZPhi = zPhi + M_PI;
+			}
+			if (zTheta > M_PI) {
+				oppZTheta = zTheta - M_PI;
+			}
+			else if (zTheta < M_PI) {
+				oppZTheta = zTheta + M_PI;
+			}
+
+			if (sqrt(pow((oppZPhi - jtPhi3->GetValue(jj)), 2) + pow((oppZTheta - jtTheta), 2)) < (M_PI / 4)) {
+				double jetPt = jtPt3->GetValue(jj);
+				arg.histoJetPt3Large->Fill(jtPt3->GetValue(jj));
+				arg.histoJetB3Large->Fill(jtB3->GetValue(jj));
+				arg.histoJetSumE3Large->Fill(jtSumE3->GetValue(jj));
+				arg.histoPtCompare3Large->Fill(arg.motherPt->at(ii), jtPt3->GetValue(jj));
+				zHaveJet = true;
+				if (jetPt > highPtJet) {
+					highPtJet = jetPt;
+					highPtJetPos = jj;
+				}
+			}
+		}
+		arg.histoZhaveJetLarge->Fill(((int)zHaveJet));
+		zHaveJet = false;
+
+		double ptDiff = arg.motherPt->at(ii) - jtPt3->GetValue(highPtJetPos);
+		arg.histoPtDiff3Large->Fill(ptDiff);
+
+		highPtJet = 0;
+		highPtJetPos = 0;
+	}
+
+	// 4
+	jetTree4->GetEntry(arg.eventNum);
+
+	for (int ii = 0; ii < motherLength; ii++) {
+		for (int jj = 0; jj < nEvents4; jj++) {
+
+			// Find jet theta to compare with Z direction
+			double jtTheta = 2 * atan(exp(-1 * jtEta4->GetValue(jj)));
+			
+			// Set opposite Z angle
+			double zPhi = arg.motherPhi->at(ii);
+			double zTheta = arg.motherTheta->at(ii);
+			double oppZPhi = 0;
+			double oppZTheta = 0;
+			if (zPhi > M_PI) {
+				oppZPhi = zPhi - M_PI;
+			}
+			else if (zPhi < M_PI) {
+				oppZPhi = zPhi + M_PI;
+			}
+			if (zTheta > M_PI) {
+				oppZTheta = zTheta - M_PI;
+			}
+			else if (zTheta < M_PI) {
+				oppZTheta = zTheta + M_PI;
+			}
+
+			if (sqrt(pow((oppZPhi - jtPhi4->GetValue(jj)), 2) + pow((oppZTheta - jtTheta), 2)) < (M_PI / 4)) {
+				arg.histoJetPt4Large->Fill(jtPt4->GetValue(jj));
+				arg.histoPtCompare4Large->Fill(arg.motherPt->at(ii), jtPt4->GetValue(jj));
+			}
+		}
+	}
+
+	// 5
+	jetTree5->GetEntry(arg.eventNum);
+
+	for (int ii = 0; ii < motherLength; ii++) {
+		for (int jj = 0; jj < nEvents5; jj++) {
+
+			// Find jet theta to compare with Z direction
+			double jtTheta = 2 * atan(exp(-1 * jtEta5->GetValue(jj)));
+
+			// Set opposite Z angle
+			double zPhi = arg.motherPhi->at(ii);
+			double zTheta = arg.motherTheta->at(ii);
+			double oppZPhi = 0;
+			double oppZTheta = 0;
+			if (zPhi > M_PI) {
+				oppZPhi = zPhi - M_PI;
+			}
+			else if (zPhi < M_PI) {
+				oppZPhi = zPhi + M_PI;
+			}
+			if (zTheta > M_PI) {
+				oppZTheta = zTheta - M_PI;
+			}
+			else if (zTheta < M_PI) {
+				oppZTheta = zTheta + M_PI;
+			}
+
+			if (sqrt(pow((oppZPhi - jtPhi5->GetValue(jj)), 2) + pow((oppZTheta - jtTheta), 2)) < (M_PI / 4)) {
+				arg.histoJetPt5Large->Fill(jtPt5->GetValue(jj));
+				arg.histoPtCompare5Large->Fill(arg.motherPt->at(ii), jtPt5->GetValue(jj));
+			}
+		}
+	}
+}
+
+void analyseEventPlane(struct data arg) {
+
+	// ------------------------------------- Declaring variables -------------------------------------
+	// Set tree and leaves
+	TTree *evtTree = (TTree*)arg.myFile->Get("hiEvtAnalyzer/HiTree");
+	TLeaf *evtPlanes = evtTree->GetLeaf("hiEvtPlanes");
+
+	// Filling histograms
+
+	evtTree->GetEntry(arg.eventNum);
+	cout << "eventPlanes has " << evtPlanes->GetLen() << " entries in event" << arg.eventNum << endl;
+	arg.histoEventPlanes->Fill(evtPlanes->GetValue(0));
 }
