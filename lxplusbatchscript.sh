@@ -105,7 +105,7 @@ then
 			export JOBS=$nJobs
 			echo "File = $file"
 			echo "Job = $job"  
-			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 8nm -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
+			bsub -R "pool>5000" -g /skeeton -M 3000000 -q 1nm -J merge_job_${i} < /afs/cern.ch/user/s/skeeton/myanalyser/CMSSW_5_3_20/src/root/submit.sh
 			let "jobsSubmitted++"
 			let "i++"
 		done
